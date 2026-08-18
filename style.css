@@ -1,23 +1,57 @@
 body {
     margin: 0;
     overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Quicksand', sans-serif;
     background-color: #000;
+    color: #fff;
 }
-canvas {
-    display: block;
-}
+canvas { display: block; }
 
 /* In-Flight HUD */
 #hud {
     position: absolute;
     top: 20px;
     left: 20px;
-    color: white;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-    font-size: 24px;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+    font-size: 22px;
     pointer-events: none;
     z-index: 10;
+    font-weight: 600;
+}
+.hud-item { margin-bottom: 5px; background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 15px; backdrop-filter: blur(3px); display: inline-block; }
+
+#fps-counter {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.4);
+    padding: 5px 15px;
+    border-radius: 15px;
+    backdrop-filter: blur(3px);
+    font-size: 14px;
+    color: #ccc;
+    z-index: 10;
+}
+
+#planet-toast {
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    padding: 20px 40px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    font-size: 24px;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    z-index: 20;
+    text-align: center;
 }
 
 #fuel-bar-container {
@@ -26,18 +60,17 @@ canvas {
     left: 50%;
     transform: translateX(-50%);
     width: 300px;
-    height: 20px;
-    background: rgba(0,0,0,0.5);
+    height: 14px;
+    background: rgba(0,0,0,0.4);
     border-radius: 10px;
-    border: 1px solid white;
+    border: 1px solid rgba(255,255,255,0.3);
     display: none;
     z-index: 10;
+    overflow: hidden;
 }
-
 #fuel-bar {
     height: 100%;
-    background: #ff4d4d;
-    border-radius: 10px;
+    background: linear-gradient(90deg, #ff4d4d, #ffcc00);
     width: 100%;
     transition: width 0.1s;
 }
@@ -45,53 +78,51 @@ canvas {
 /* Full Screen Shop/Death Screen */
 #shop-screen {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
-    color: white;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: radial-gradient(circle at center, #1a1a40, #000000);
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 100;
-    box-sizing: border-box;
-    padding: 20px;
 }
 
 .shop-container {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(255, 255, 255, 0.05);
     padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border-radius: 25px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.8);
     text-align: center;
-    max-width: 800px;
-    width: 90%;
-    border: 2px solid rgba(255,255,255,0.1);
+    max-width: 700px;
+    width: 85%;
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(20px);
 }
 
 .shop-title {
-    font-size: 48px;
-    margin-bottom: 10px;
-    background: -webkit-linear-gradient(#fff, #aac);
+    font-size: 52px;
+    margin: 0 0 20px 0;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffffff, #8e9eab);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .stats-row {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     margin-bottom: 30px;
-    font-size: 22px;
     flex-wrap: wrap;
     gap: 10px;
 }
 
 .stat-item {
     background: rgba(255,255,255,0.1);
-    padding: 10px 20px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    flex: 1;
+    min-width: 140px;
 }
 
 .upgrades-grid {
@@ -102,57 +133,47 @@ canvas {
 }
 
 .upgrade-card {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.08);
     padding: 15px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     text-align: left;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-
 .upgrade-card:hover {
-    background: rgba(255,255,255,0.2);
-    transform: translateY(-2px);
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(255,255,255,0.1);
 }
+.upgrade-card.disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.upgrade-card.locked { background: rgba(0,0,0,0.2); cursor: not-allowed; opacity: 0.6; border: 1px dashed rgba(255,255,255,0.2); }
 
-.upgrade-card.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.upgrade-info h3 { margin: 0 0 5px 0; color: #fff; }
-.upgrade-info p { margin: 0; color: #ccc; font-size: 14px; }
-
+.upgrade-info h3 { margin: 0 0 5px 0; font-size: 18px; }
+.upgrade-info p { margin: 0; font-size: 12px; color: #bbb; }
 .upgrade-cost {
-    font-weight: bold;
+    font-weight: 700;
     color: #4CAF50;
-    font-size: 18px;
+    font-size: 16px;
+    white-space: nowrap;
 }
 
 #continue-btn {
-    background: #ff4d4d;
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
     color: white;
     border: none;
-    padding: 15px 60px;
+    padding: 15px 80px;
     font-size: 24px;
-    border-radius: 10px;
+    border-radius: 30px;
     cursor: pointer;
-    font-weight: bold;
-    box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4);
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(255, 75, 43, 0.4);
     transition: all 0.2s;
+    font-family: 'Quicksand', sans-serif;
 }
+#continue-btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 75, 43, 0.6); }
 
-#continue-btn:hover {
-    background: #e60000;
-    transform: scale(1.05);
-}
-
-.hint {
-    margin-top: 20px;
-    font-size: 14px;
-    color: #888;
-}
+.hint { margin-top: 20px; font-size: 14px; color: #888; }

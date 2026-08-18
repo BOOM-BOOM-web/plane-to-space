@@ -4,16 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paper to Space 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <!-- In-Flight HUD -->
     <div id="hud">
-        Altitude: <span id="altitude">0</span> m<br>
-        Distance: <span id="distance">0</span> m<br>
-        Money: $<span id="money">0</span>
+        <div class="hud-item">Altitude: <span id="altitude">0</span> m</div>
+        <div class="hud-item">Distance: <span id="distance">0</span> m</div>
+        <div class="hud-item">Money: $<span id="money">0</span></div>
     </div>
+    
+    <div id="fps-counter">FPS: <span id="fps-value">60</span></div>
+
+    <div id="planet-toast"></div>
 
     <!-- Rocket Fuel Bar -->
     <div id="fuel-bar-container">
@@ -23,7 +29,7 @@
     <!-- Full Screen Shop/Death Screen -->
     <div id="shop-screen">
         <div class="shop-container">
-            <h1 class="shop-title">Hanger</h1>
+            <h1 class="shop-title">Paper to Space</h1>
             <div class="stats-row">
                 <div class="stat-item">Max Altitude: <span id="run-alt">0</span> m</div>
                 <div class="stat-item">Max Distance: <span id="run-dist">0</span> m</div>
@@ -31,19 +37,14 @@
                 <div class="stat-item">Total Money: $<span id="total-money">0</span></div>
             </div>
             
-            <div class="upgrades-grid" id="upgrades-grid">
-                <!-- Upgrades injected by ui.js -->
-            </div>
+            <div class="upgrades-grid" id="upgrades-grid"></div>
 
             <button id="continue-btn">LAUNCH</button>
-            <div class="hint">Hold SPACE or LEFT MOUSE to glide upwards. Release to dive. Hold 'F' for Rocket Boost.</div>
+            <div class="hint">Hold SPACE or LEFT CLICK to glide upwards. Release to dive. Hold 'F' for Rocket Boost.</div>
         </div>
     </div>
 
-    <!-- Three.js Library (Load before your custom scripts) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- Game Scripts (Load in order of dependencies) -->
     <script src="js/config.js"></script>
     <script src="js/scene.js"></script>
     <script src="js/ui.js"></script>

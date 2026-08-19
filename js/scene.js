@@ -48,7 +48,7 @@ const SceneManager = {
         ground.position.z = -CONFIG.mapLength / 2;
         ground.receiveShadow = true;
         this.scene.add(ground);
-    }
+    }, // <-- THE MISSING COMMA WAS HERE
 
     createEnvironmentProps() {
         const treeGeo = new THREE.ConeGeometry(10, 30, 6);
@@ -66,7 +66,7 @@ const SceneManager = {
             mtn.position.set((Math.random() - 0.5) * 3000, 240, -Math.random() * CONFIG.mapLength);
             this.scene.add(mtn);
         }
-    }
+    },
 
     createStars() {
         const starGeo = new THREE.BufferGeometry();
@@ -80,7 +80,7 @@ const SceneManager = {
         this.stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 15 }));
         this.stars.visible = false;
         this.scene.add(this.stars);
-    }
+    },
 
     createPlanets() {
         const moon = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 32), new THREE.MeshLambertMaterial({ color: 0xcccccc }));
@@ -92,7 +92,7 @@ const SceneManager = {
         mars.position.set(-2000, 8000, -20000);
         this.scene.add(mars);
         this.planets.push({mesh: mars, alt: 8000});
-    }
+    },
 
     createHighFidelityPlane() {
         this.planeGroup = new THREE.Group();
@@ -140,144 +140,4 @@ const SceneManager = {
 
         this.sockets.rightWing = new THREE.Object3D();
         this.sockets.rightWing.position.set(1.5, 0, 1.0);
-        this.planeGroup.add(this.sockets.rightWing);
-        
-        this.sockets.leftWingExt = new THREE.Object3D();
-        this.sockets.leftWingExt.position.set(-1.5, 0, -0.5);
-        this.planeGroup.add(this.sockets.leftWingExt);
-        
-        this.sockets.rightWingExt = new THREE.Object3D();
-        this.sockets.rightWingExt.position.set(1.5, 0, -0.5);
-        this.planeGroup.add(this.sockets.rightWingExt);
-
-        // Default Rocket Flame
-        const flameGeo = new THREE.ConeGeometry(0.4, 2, 8);
-        const flameMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 });
-        this.flameMesh = new THREE.Mesh(flameGeo, flameMat);
-        this.flameMesh.rotation.x = Math.PI / 2; 
-        this.flameMesh.position.z = 2.5;
-        this.flameMesh.visible = false;
-        this.planeGroup.add(this.flameMesh);
-
-        this.scene.add(this.planeGroup);
-    }
-
-    createTrail() {
-        this.trailGeometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(300 * 3);
-        const colors = new Float32Array(300 * 3);
-        this.trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        this.trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        
-        this.trailMaterial = new THREE.PointsMaterial({ 
-            size: 2, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
-        });
-        this.trailMesh = new THREE.Points(this.trailGeometry, this.trailMaterial);
-        this.scene.add(this.trailMesh);
-    }
-
-    updateTrail(x, y, z, speed) {
-        const posArr = this.trailGeometry.attributes.position.array;
-        const colArr = this.trailGeometry.attributes.color.array;
-        
-        for (let i = 299; i > 0; i--) {
-            posArr[i * 3] = posArr[(i - 1) * 3];
-            posArr[i * 3 + 1] = posArr[(i - 1) * 3 + 1];
-            posArr[i * 3 + 2] = posArr[(i - 1) * 3 + 2];
-        }
-        
-        posArr[0] = x;
-        posArr[1] = y;
-        posArr[2] = z + 1.5;
-
-        let color = new THREE.Color();
-        if (speed < 20) color.setHex(0x0000ff);
-        else if (speed < 40) color.setHex(0x00ffff);
-        else color.setHex(0xff00ff);
-
-        for (let i = 0; i < 300; i++) {
-            let alpha = 1.0 - (i / 300);
-            colArr[i * 3] = color.r * alpha;
-            colArr[i * 3 + 1] = color.g * alpha;
-            colArr[i * 3 + 2] = color.b * alpha;
-        }
-
-        this.trailGeometry.attributes.position.needsUpdate = true;
-        this.trailGeometry.attributes.color.needsUpdate = true;
-    }
-
-    updatePlaneVisuals() {
-        // Clear old attachments safely
-        for(let key in this.sockets) {
-            while(this.sockets[key].children.length > 0) {
-                this.sockets[key].remove(this.sockets[key].children[0]);
-            }
-        }
-
-        const metalMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9, roughness: 0.2 });
-        const paperMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, side: THREE.DoubleSide });
-
-        // Throw Power -> Weighted Nose (Paperclip)
-        if(UPGRADES.throw.level > 1) {
-            const clipGeo = new THREE.TorusGeometry(0.2, 0.05, 8, 16, Math.PI);
-            const clip = new THREE.Mesh(clipGeo, metalMat);
-            clip.position.y = 0.1;
-            this.sockets.nose.add(clip);
-        }
-
-        // Aero Level > 3 -> Wing Flaps
-        if(UPGRADES.aero.level > 3) {
-            const flapGeo = new THREE.PlaneGeometry(0.4, 0.3);
-            const leftFlap = new THREE.Mesh(flapGeo, paperMat);
-            leftFlap.position.set(-0.2, 0.1, 0);
-            leftFlap.rotation.x = -0.5;
-            this.sockets.leftWing.add(leftFlap);
-            
-            const rightFlap = new THREE.Mesh(flapGeo, paperMat);
-            rightFlap.position.set(0.2, 0.1, 0);
-            rightFlap.rotation.x = -0.5;
-            this.sockets.rightWing.add(rightFlap);
-        }
-
-        // Aero Level > 7 -> Glider Wings (Extends wingspan)
-        if(UPGRADES.aero.level > 7) {
-            const extGeo = new THREE.PlaneGeometry(1.2, 2.5);
-            const leftExt = new THREE.Mesh(extGeo, paperMat);
-            leftExt.rotation.x = -Math.PI/2;
-            this.sockets.leftWingExt.add(leftExt);
-            
-            const rightExt = new THREE.Mesh(extGeo, paperMat);
-            rightExt.rotation.x = -Math.PI/2;
-            this.sockets.rightWingExt.add(rightExt);
-        }
-
-        // Rocket Booster -> Thruster model
-        if(UPGRADES.fuel.level > 0) {
-            const thrusterGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 8);
-            const thruster = new THREE.Mesh(thrusterGeo, metalMat);
-            thruster.rotation.x = Math.PI / 2;
-            thruster.position.z = 0.5;
-            this.sockets.tail.add(thruster);
-        }
-    }
-
-    updateEnvironment(altitude) {
-        if (altitude > 500) {
-            let spaceProgress = Math.min(1, (altitude - 500) / 2500);
-            this.scene.background = new THREE.Color(0x000022).lerp(new THREE.Color(0x87CEEB), 1 - spaceProgress);
-            this.scene.fog.color = this.scene.background;
-            if (altitude > 1500) this.stars.visible = true;
-        } else {
-            this.scene.background = new THREE.Color(0x87CEEB);
-            this.scene.fog.color = this.scene.background;
-            this.stars.visible = false;
-        }
-        this.planets.forEach(p => p.mesh.rotation.y += 0.001);
-    }
-
-    onWindowResize() {
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-};
+        this.planeGroup

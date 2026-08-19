@@ -1,14 +1,20 @@
 const CONFIG = {
-    gravity: 0.12,        // Increased to make space harder
-    baseDrag: 0.995,
-    aeroDragMultiplier: 0.002,
+    // Physics
+    gravity: 0.15,
     liftMultiplier: 0.05,
     throwPower: 5.0,
     throwPop: 2.0,
-    rocketThrust: 0.3,
-    rocketLift: 0.1,
+    rocketThrust: 0.4,
+    rocketLift: 0.15,
     moneyMultiplier: 0.25,
-    mapLength: 50000     // Extended map length
+    mapLength: 50000,
+    
+    // v2.0 Aerodynamics Overhaul
+    baseDragCoeff: 0.025,         // Resistive force coefficient
+    aeroDragReduction: 0.002,     // How much drag is reduced per Aero level
+    aero2DragReduction: 0.005,    // Tier 2 reduction
+    controlAuthority: 0.02,       // Base pitch responsiveness
+    maxPitchResponse: 0.1,        // Cap on how much pitch changes per frame
 };
 
 // Planet Milestones & Unlocks

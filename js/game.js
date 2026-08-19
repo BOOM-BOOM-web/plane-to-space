@@ -1,41 +1,25 @@
 const GameManager = {
-    state: 'menu',
-    money: 0,
-    runMaxAlt: 0,
-    runMaxDist: 0,
-    plane: null,
-    isMouseDown: false,
-    isFDown: false,
-    planetsReached: [],
-    
-    // FPS calculation
-    lastTime: performance.now(),
-    frames: 0,
-    fps: 0,
+    state: 'menu', money: 0, runMaxAlt: 0, runMaxDist: 0,
+    plane: null, isMouseDown: false, isFDown: false, planetsReached: [],
+    lastTime: performance.now(), frames: 0, fps: 0,
 
     init() {
         this.plane = { x: 0, y: 20, z: 0, vx: 0, vy: 0, vz: 0, pitch: 0, fuel: 0, hasBounced: false };
         
-        // Load Saved Data
         const saveData = StorageManager.load();
         if (saveData) {
             this.money = saveData.money || 0;
-            // Restore upgrade levels, costs, and locked states
             if (saveData.upgrades) {
                 for (let key in UPGRADES) {
                     if (saveData.upgrades[key]) {
                         UPGRADES[key].level = saveData.upgrades[key].level;
                         UPGRADES[key].cost = saveData.upgrades[key].cost;
-                        // Only set locked state if it exists in save data
-                        if (typeof saveData.upgrades[key].locked !== 'undefined') {
-                            UPGRADES[key].locked = saveData.upgrades[key].locked;
-                        }
+                        if (typeof saveData.upgrades[key].locked !== 'undefined') UPGRADES[key].locked = saveData.upgrades[key].locked;
                     }
                 }
             }
         }
         
-        // Input Listeners
         const canvas = SceneManager.renderer.domElement;
         canvas.addEventListener('mousedown', () => this.isMouseDown = true);
         window.addEventListener('mouseup', () => this.isMouseDown = false);
@@ -52,6 +36,7 @@ const GameManager = {
         });
 
         UIManager.buildShopUI(this.money);
+        SceneManager.updatePlaneVisuals(); 
     },
 
     startFlight() {
@@ -71,13 +56,11 @@ const GameManager = {
         this.plane.fuel = maxFuel;
         this.plane.hasBounced = false;
         
-        this.runMaxAlt = 0;
-        this.runMaxDist = 0;
-        this.planetsReached = [];
+        this.runMaxAlt = 0; this.runMaxDist = 0; this.planetsReached = [];
         
         SceneManager.camera.position.set(0, 25, 20);
         SceneManager.camera.lookAt(0, 20, 0);
-        
+        SceneManager.updatePlaneVisuals(); 
         UIManager.toggleFuelBar(maxFuel > 0);
     },
 
@@ -90,8 +73,6 @@ const GameManager = {
         UIManager.toggleFuelBar(false);
         UIManager.buildShopUI(this.money);
         UIManager.showShop();
-        
-        // Save game after earning money
         StorageManager.save(this.money, UPGRADES);
     },
 
@@ -102,8 +83,7 @@ const GameManager = {
             up.level++;
             up.cost = Math.floor(up.cost * 1.8);
             UIManager.buildShopUI(this.money);
-            
-            // Save game after buying upgrade
+            SceneManager.updatePlaneVisuals(); 
             StorageManager.save(this.money, UPGRADES);
         }
     },
@@ -113,10 +93,8 @@ const GameManager = {
             if(this.runMaxAlt >= planet.altitude && !this.planetsReached.includes(planet.name)) {
                 this.planetsReached.push(planet.name);
                 UIManager.showPlanetToast(`<div>${planet.desc}</div>`);
-                
                 if(planet.unlocks && UPGRADES[planet.unlocks].locked) {
                     UPGRADES[planet.unlocks].locked = false;
-                    // Save game when unlocking a new upgrade tier!
                     StorageManager.save(this.money, UPGRADES);
                 }
             }
@@ -128,8 +106,7 @@ const GameManager = {
         let now = performance.now();
         if (now - this.lastTime >= 1000) {
             this.fps = Math.round((this.frames * 1000) / (now - this.lastTime));
-            this.frames = 0;
-            this.lastTime = now;
+            this.frames = 0; this.lastTime = now;
             UIManager.updateFPS(this.fps);
         }
     },
@@ -138,19 +115,22 @@ const GameManager = {
         this.calculateFPS();
         if (this.state !== 'flying') return;
 
-        let drag = CONFIG.baseDrag - (UPGRADES.aero.level * CONFIG.aeroDragMultiplier);
-        if(!UPGRADES.aero2.locked) {
-            drag -= (UPGRADES.aero2.level * 0.005);
-        }
-
-        let altDragMultiplier = 1.0;
-        if(this.plane.y > 1000) {
-            altDragMultiplier = Math.max(0.2, 1.0 - (this.plane.y / 5000));
-        }
+        let airDensity = Math.max(0.1, 1.0 - (this.plane.y / 5000));
         
-        this.plane.vx *= drag;
-        this.plane.vy *= drag * altDragMultiplier;
-        this.plane.vz *= drag * altDragMultiplier;
+        let dragCoeff = CONFIG.baseDragCoeff - (UPGRADES.aero.level * CONFIG.aeroDragReduction);
+        if(!UPGRADES.aero2.locked) {
+            dragCoeff -= (UPGRADES.aero2.level * CONFIG.aero2DragReduction);
+        }
+        dragCoeff = Math.max(0.001, dragCoeff); 
+
+        let speed = Math.sqrt(this.plane.vx**2 + this.plane.vy**2 + this.plane.vz**2);
+        let dragForce = dragCoeff * speed * airDensity;
+        
+        if (speed > 0) {
+            this.plane.vx -= (this.plane.vx / speed) * dragForce;
+            this.plane.vy -= (this.plane.vy / speed) * dragForce;
+            this.plane.vz -= (this.plane.vz / speed) * dragForce;
+        }
 
         let currentGravity = CONFIG.gravity;
         if(this.plane.y > 2000) {
@@ -158,14 +138,12 @@ const GameManager = {
         }
         this.plane.vy -= currentGravity;
 
+        let controlNimbleness = Math.min(CONFIG.maxPitchResponse, CONFIG.controlAuthority + (speed * 0.005));
+        
         if (this.isMouseDown) {
-            let speed = Math.sqrt(this.plane.vx*this.plane.vx + this.plane.vz*this.plane.vz);
-            if (speed > 0.1) {
-                let lift = speed * CONFIG.liftMultiplier;
-                this.plane.vy += lift;
-                this.plane.vx *= 0.98;
-                this.plane.vz *= 0.99;
-            }
+            let lift = speed * CONFIG.liftMultiplier;
+            this.plane.vy += lift;
+            this.plane.vz *= (1.0 - 0.01 * airDensity); 
         }
 
         let isBoosting = false;
@@ -179,16 +157,20 @@ const GameManager = {
         if(isBoosting) {
             let maxFuel = (UPGRADES.fuel.level * 100) + (!UPGRADES.fuel2.locked ? UPGRADES.fuel2.level * 250 : 0);
             UIManager.updateFuelBar(this.plane.fuel, maxFuel);
-            SceneManager.flameMesh.scale.z = 1 + Math.random() * 0.5;
+            SceneManager.flameMesh.scale.z = 1.5 + Math.random() * 0.5;
         }
 
         this.plane.x += this.plane.vx;
         this.plane.y += this.plane.vy;
         this.plane.z += this.plane.vz;
 
-        this.plane.pitch = Math.atan2(this.plane.vy, -this.plane.vz);
+        let targetPitch = Math.atan2(this.plane.vy, -this.plane.vz);
+        this.plane.pitch += (targetPitch - this.plane.pitch) * controlNimbleness;
+        
         SceneManager.planeGroup.position.set(this.plane.x, this.plane.y, this.plane.z);
         SceneManager.planeGroup.rotation.x = -this.plane.pitch;
+        
+        SceneManager.updateTrail(this.plane.x, this.plane.y, this.plane.z, speed);
 
         let camX = this.plane.x;
         let camY = this.plane.y + 5;
